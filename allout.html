@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Allout Music</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#090610;
+  --panel:#171020;
+  --purple:#a855f7;
+  --pink:#e879f9;
+  --text:#f8f4ff;
+  --muted:#b8a9c9;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(ellipse at top,#35104f 0%,var(--bg) 60%);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:22px 6%;
+  border-bottom:1px solid #ffffff15;
+}
+.logo { font-size:30px; font-weight:900; letter-spacing:2px; }
+.logo span { color:var(--pink); }
+main { max-width:1000px; margin:auto; padding:28px 18px 210px; }
+h1 { font-size:clamp(30px,5vw,48px); margin:8px 0; }
+h2 { margin-top:0; }
+.pink { color:var(--pink); }
+.muted { color:var(--muted); }
+.panel {
+  margin:22px 0;
+  padding:22px;
+  border:1px solid #ffffff18;
+  border-radius:22px;
+  background:#171020eF;
+  box-shadow:0 10px 40px #0005;
+}
+button,input,select { font:inherit; }
+button {
+  padding:12px 16px;
+  border:0;
+  border-radius:12px;
+  color:white;
+  font-weight:bold;
+  background:linear-gradient(135deg,var(--purple),#7024bd);
+  cursor:pointer;
+}
+button:hover { filter:brightness(1.18); }
+button.secondary {
+  background:#ffffff12;
+  border:1px solid #ffffff20;
+}
+input[type=text],input[type=search],select {
+  min-width:0;
+  padding:12px;
+  border:1px solid #503660;
+  border-radius:12px;
+  background:#0c0812;
+  color:white;
+}
+input[type=search] { flex:1; }
+input[type=range] { accent-color:var(--pink); }
+.tools { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0; }
+.tools input[type=text] { flex:1; }
+.track {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 8px;
+  border-bottom:1px solid #ffffff12;
+  border-radius:10px;
+}
+.track.active { background:#a855f725; }
+.cover {
+  width:48px;
+  height:48px;
+  flex-shrink:0;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:linear-gradient(135deg,#6124a0,#e879f9);
+  font-size:24px;
+}
+.info { flex:1; min-width:0; overflow-wrap:anywhere; }
+.info small { color:var(--muted); }
+.track button { padding:9px 12px; }
+#empty { text-align:center; padding:24px 4px; }
+.player {
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:14px 5%;
+  background:#100a19f5;
+  border-top:1px solid #a855f755;
+  box-shadow:0 -10px 35px #0007;
+  backdrop-filter:blur(16px);
+}
+.playerinner {
+  max-width:1000px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:1fr 1.3fr 0.7fr;
+  align-items:center;
+  gap:20px;
+}
+#now { overflow-wrap:anywhere; font-weight:bold; }
+.controls { display:flex; justify-content:center; align-items:center; gap:12px; }
+#play { width:48px; height:48px; border-radius:50%; font-size:20px; }
+.progress { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; }
+.progress input { flex:1; min-width:30px; }
+.volume input { width:100%; }
+@media(max-width:650px) {
+  header { padding:18px; }
+  .playerinner { grid-template-columns:1fr; gap:8px; }
+  .player { padding:10px 16px; }
+  main { padding-bottom:265px; }
+  #now { text-align:center; }
+  .volume { display:none; }
+  .panel { padding:16px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ALL<span>OUT</span></div>
+  <span class="muted">YOUR MUSIC. YOUR WORLD.</span>
+</header>
+
+<main>
+  <p class="muted">TON UNIVERS MUSICAL</p>
+  <h1>Ta musique.<br><span class="pink">Tes règles.</span></h1>
+  <p class="muted">Toutes tes chansons, réunies au même endroit. 💜</p>
+
+  <section class="panel">
+    <h2>🎧 Ma bibliothèque</h2>
+    <p class="muted">Ajoute les fichiers audio présents sur ton PC.</p>
+    <div class="tools">
+      <button id="add">＋ Ajouter mes musiques</button>
+      <input id="files" type="file" accept="audio/*" multiple hidden>
+    </div>
+    <div class="tools">
+      <input id="search" type="search" placeholder="🔎 Rechercher une chanson...">
+      <select id="filter">
+        <option value="">Toutes les chansons</option>
+      </select>
+    </div>
+    <div id="songs"></div>
+    <div id="empty" class="muted">Ta bibliothèque est vide. Ajoute ta première chanson ! 🎵</div>
+  </section>
+
+  <section class="panel">
+    <h2>💜 Mes playlists</h2>
+    <div class="tools">
+      <input id="playlistName" type="text" placeholder="Nom de ta playlist">
+      <button id="create">＋ Créer</button>
+    </div>
+    <div class="tools">
+      <select id="playlists">
+        <option value="">Choisir une playlist</option>
+      </select>
+      <button id="addSelected" class="secondary">Ajouter la chanson choisie</button>
+    </div>
+    <p id="playlistInfo" class="muted">Crée ta première playlist !</p>
+    <button id="deletePlaylist" class="secondary">Supprimer cette playlist</button>
+  </section>
+
+  <p class="muted">ALL OUT • ÉCOUTE À TA FAÇON 💜</p>
+</main>
+
+<div class="player">
+  <div class="playerinner">
+    <div>
+      <div id="now">Aucune chanson sélectionnée</div>
+      <small id="status" class="muted">Prêt à écouter</small>
+    </div>
+
+    <div>
+      <div class="controls">
+        <button id="prev" class="secondary" title="Précédent">⏮</button>
+        <button id="play" title="Lecture / pause">▶</button>
+        <button id="next" class="secondary" title="Suivant">⏭</button>
+      </div>
+      <div class="progress">
+        <span id="elapsed">0:00</span>
+        <input id="seek" type="range" min="0" max="1000" value="0">
+        <span id="duration">0:00</span>
+      </div>
+    </div>
+
+    <div class="volume">
+      <label class="muted" for="volume">🔊 Volume</label>
+      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8">
+    </div>
+  </div>
+</div>
+
+<audio id="audio"></audio>
+
+<script>
+const $ = id => document.getElementById(id);
+const audio = $("audio");
+
+let db;
+let tracks = [];
+let playlists = [];
+let selectedId = null;
+let currentId = null;
+let playlistFilter = "";
+const urls = new Map();
+
+function openDatabase() {
+  return new Promise((resolve,reject) => {
+    const request = indexedDB.open("AlloutLibrary",1);
+    request.onupgradeneeded = () => {
+      const d = request.result;
+      d.createObjectStore("tracks",{keyPath:"id"});
+      d.createObjectStore("playlists",{keyPath:"id"});
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function all(name) {
+  return new Promise((resolve,reject) => {
+    const request = db.transaction(name).objectStore(name).getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function save(name,value) {
+  return new Promise((resolve,reject) => {
+    const tx = db.transaction(name,"readwrite");
+    tx.objectStore(name).put(value);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function erase(name,id) {
+  return new Promise((resolve,reject) => {
+    const tx = db.transaction(name,"readwrite");
+    tx.objectStore(name).delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function makeId() {
+  return Date.now().toString(36)+Math.random().toString(36).slice(2);
+}
+
+function formatTime(seconds) {
+  if (!Number.isFinite(seconds)) return "0:00";
+  return Math.floor(seconds/60)+":"+
+    String(Math.floor(seconds%60)).padStart(2,"0");
+}
+
+function audioUrl(track) {
+  if (!urls.has(track.id)) {
+    urls.set(track.id,URL.createObjectURL(track.blob));
+  }
+  return urls.get(track.id);
+}
+
+function selectedPlaylist() {
+  return playlists.find(p => p.id === $("playlists").value);
+}
+
+function renderPlaylists() {
+  const chosen = $("playlists").value;
+  $("playlists").innerHTML = '<option value="">Choisir une playlist</option>';
+  $("filter").innerHTML = '<option value="">Toutes les chansons</option>';
+
+  playlists.forEach(p => {
+    for (const id of ["playlists","filter"]) {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent = p.name;
+      $(id).appendChild(option);
+    }
+  });
+
+  if (playlists.some(p => p.id === chosen)) $("playlists").value = chosen;
+  if (playlists.some(p => p.id === playlistFilter)) $("filter").value = playlistFilter;
+
+  const p = selectedPlaylist();
+  $("playlistInfo").textContent = p
+    ? p.name+" • "+p.trackIds.length+" chanson(s)"
+    : "Choisis une playlist pour organiser tes chansons.";
+}
+
+function visibleTracks() {
+  const term = $("search").value.trim().toLowerCase();
+  let list = tracks.filter(t => t.name.toLowerCase().includes(term));
+
+  if (playlistFilter) {
+    const p = playlists.find(p => p.id === playlistFilter);
+    list = list.filter(t => p && p.trackIds.includes(t.id));
+  }
+  return list;
+}
+
+function renderTracks() {
+  const list = visibleTracks();
+  $("songs").replaceChildren();
+  $("empty").style.display = list.length ? "none" : "block";
+
+  list.forEach(t => {
+    const row = document.createElement("div");
+    row.className = "track"+(t.id === currentId ? " active" : "");
+
+    const cover = document.createElement("div");
+    cover.className = "cover";
+    cover.textContent = "♫";
+
+    const info = document.createElement("div");
+    info.className = "info";
+    const title = document.createElement("div");
+    title.textContent = t.name;
+    const sub = document.createElement("small");
+    sub.textContent = t.id === currentId && !audio.paused
+      ? "En cours de lecture" : "Fichier audio";
+    info.append(title,sub);
+
+    const play = document.createElement("button");
+    play.textContent = t.id === currentId && !audio.paused ? "Ⅱ" : "▶";
+    play.title = "Écouter cette chanson";
+    play.onclick = () => playTrack(t.id);
+
+    const add = document.createElement("button");
+    add.className = "secondary";
+    add.textContent = "+";
+    add.title = "Ajouter à la playlist sélectionnée";
+    add.onclick = () => addTrackToPlaylist(t.id);
+
+    row.onclick = () => { selectedId = t.id; };
+    row.append(cover,info,play,add);
+    $("songs").appendChild(row);
+  });
+}
+
+async function refresh() {
+  tracks = await all("tracks");
+  playlists = await all("playlists");
+  renderPlaylists();
+  renderTracks();
+}
+
+async function playTrack(id) {
+  const t = tracks.find(track => track.id === id);
+  if (!t) return;
+
+  selectedId = id;
+  currentId = id;
+  audio.src = audioUrl(t);
+  $("now").textContent = t.name;
+  $("status").textContent = "Lecture en cours";
+  renderTracks();
+
+  try {
+    await audio.play();
+  } catch (error) {
+    $("status").textContent = "Appuie sur ▶ pour lancer la musique";
+  }
+}
+
+async function addTrackToPlaylist(id) {
+  const p = selectedPlaylist();
+  if (!p) {
+    alert("Choisis une playlist d'abord.");
+    return;
+  }
+  if (!p.trackIds.includes(id)) p.trackIds.push(id);
+  await save("playlists",p);
+  await refresh();
+  $("playlists").value = p.id;
+  renderPlaylists();
+}
+
+function stepTrack(direction) {
+  const list = visibleTracks();
+  if (!list.length) return;
+
+  let i = list.findIndex(t => t.id === currentId);
+  i = i < 0 ? 0 : (i + direction + list.length) % list.length;
+  playTrack(list[i].id);
+}
+
+$("add").onclick = () => $("files").click();
+
+$("files").onchange = async event => {
+  for (const file of event.target.files) {
+    const track = {
+      id:makeId(),
+      name:file.name.replace(/\.[^.]+$/,""),
+      blob:file
+    };
+    await save("tracks",track);
+  }
+  event.target.value = "";
+  await refresh();
+};
+
+$("search").oninput = renderTracks;
+$("filter").onchange = event => {
+  playlistFilter = event.target.value;
+  renderTracks();
+};
+$("playlists").onchange = renderPlaylists;
+
+$("create").onclick = async () => {
+  const name = $("playlistName").value.trim();
+  if (!name) {
+    alert("Écris un nom pour ta playlist.");
+    return;
+  }
+
+  const p = {id:makeId(),name,trackIds:[]};
+  await save("playlists",p);
+  $("playlistName").value = "";
+  await refresh();
+  $("playlists").value = p.id;
+  renderPlaylists();
+};
+
+$("addSelected").onclick = () => {
+  if (!selectedId) {
+    alert("Clique d'abord sur une chanson pour la sélectionner.");
+    return;
+  }
+  addTrackToPlaylist(selectedId);
+};
+
+$("deletePlaylist").onclick = async () => {
+  const p = selectedPlaylist();
+  if (!p) {
+    alert("Choisis une playlist à supprimer.");
+    return;
+  }
+
+  if (confirm('Supprimer la playlist "'+p.name+'"? Les chansons resteront dans ta bibliothèque.')) {
+    await erase("playlists",p.id);
+    if (playlistFilter === p.id) playlistFilter = "";
+    await refresh();
+  }
+};
+
+$("play").onclick = async () => {
+  if (!currentId) {
+    const list = visibleTracks();
+    if (list.length) await playTrack(list[0].id);
+    else alert("Ajoute d'abord une musique.");
+  } else if (audio.paused) {
+    try { await audio.play(); } catch (error) {}
+  } else {
+    audio.pause();
+  }
+};
+
+$("prev").onclick = () => stepTrack(-1);
+$("next").onclick = () => stepTrack(1);
+audio.onended = () => stepTrack(1);
+
+audio.onplay = () => {
+  $("play").textContent = "Ⅱ";
+  $("status").textContent = "Lecture en cours";
+  renderTracks();
+};
+audio.onpause = () => {
+  $("play").textContent = "▶";
+  if (currentId) $("status").textContent = "En pause";
+  renderTracks();
+};
+
+audio.ontimeupdate = () => {
+  $("elapsed").textContent = formatTime(audio.currentTime);
+  $("duration").textContent = formatTime(audio.duration);
+  if (Number.isFinite(audio.duration) && audio.duration > 0) {
+    $("seek").value = audio.currentTime/audio.duration*1000;
+  }
+};
+
+$("seek").oninput = () => {
+  if (Number.isFinite(audio.duration) && audio.duration > 0) {
+    audio.currentTime = $("seek").value/1000*audio.duration;
+  }
+};
+
+$("volume").oninput = event => audio.volume = Number(event.target.value);
+audio.volume = 0.8;
+
+(async () => {
+  try {
+    db = await openDatabase();
+    await refresh();
+    $("status").textContent = "Bibliothèque prête";
+  } catch (error) {
+    $("status").textContent = "Erreur de stockage";
+    alert("Allout n'a pas pu ouvrir sa bibliothèque. Essaie de rouvrir le fichier dans Chrome.");
+  }
+})();
+</script>
+</body>
+</html>
